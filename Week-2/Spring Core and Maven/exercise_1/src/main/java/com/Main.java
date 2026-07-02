@@ -1,0 +1,18 @@
+package com;
+
+import com.library.service.BookService;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class Main {
+    public static void main(String[] args) {
+        ClassPathXmlApplicationContext context =
+            new ClassPathXmlApplicationContext("applicationContext.xml");
+
+        BookService bookService = (BookService) context.getBean("bookService");
+
+        bookService.manageBooks();
+
+        System.out.println("Spring IoC Container configured successfully!");
+        context.close();
+    }
+}
