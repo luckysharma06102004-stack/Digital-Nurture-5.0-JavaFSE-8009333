@@ -1,3 +1,4 @@
+# Global Git ignore rules
 target/
 .idea/
 .vscode/
