@@ -1,0 +1,89 @@
+{
+  "courses": [
+    {
+      "id": "1",
+      "name": "Updated Data Structures",
+      "code": "CS101",
+      "credits": 4,
+      "gradeStatus": "passed"
+    },
+    {
+      "id": "2",
+      "name": "Operating Systems",
+      "code": "CS102",
+      "credits": 3,
+      "gradeStatus": "failed"
+    },
+    {
+      "id": "3",
+      "name": "Database Management",
+      "code": "CS103",
+      "credits": 4,
+      "gradeStatus": "pending"
+    },
+    {
+      "name": "New Course from Lisa",
+      "code": "C101",
+      "credits": 3,
+      "gradeStatus": "pending",
+      "id": "K4u5KB50pAA"
+    },
+    {
+      "name": "New Course from Test123",
+      "code": "C101",
+      "credits": 3,
+      "gradeStatus": "pending",
+      "id": "4HKA2SZ6uh8"
+    },
+    {
+      "name": "Test Course",
+      "code": "CS999",
+      "credits": 2,
+      "gradeStatus": "pending",
+      "id": "rjIpYwDQjgk"
+    },
+    {
+      "name": "Test Course",
+      "code": "CS999",
+      "credits": 2,
+      "gradeStatus": "pending",
+      "id": "kb1mMfLlAv4"
+    },
+    {
+      "name": "Test Course",
+      "code": "CS999",
+      "credits": 2,
+      "gradeStatus": "pending",
+      "id": "enL83km7XuQ"
+    },
+    {
+      "name": "New Course from Lucky Sharma",
+      "code": "C101",
+      "credits": 3,
+      "gradeStatus": "pending",
+      "id": "MZ1aODe6ssQ"
+    },
+    {
+      "name": "Test Course",
+      "code": "CS999",
+      "credits": 2,
+      "gradeStatus": "pending",
+      "id": "qy8v1Xyp6Lc"
+    }
+  ],
+  "students": [
+    {
+      "id": "1",
+      "name": "Lucky Sharma",
+      "email": "lucky@test.com"
+    }
+  ],
+  "enrollments": [
+    {
+      "id": "1",
+      "studentId": 1,
+      "courseId": 1
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}

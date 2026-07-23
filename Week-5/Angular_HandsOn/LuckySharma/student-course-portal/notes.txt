@@ -1,0 +1,816 @@
+================================================================================
+Digital Nurture 5.0 - Angular Hands-On Exercise Solutions
+Implementation Notes - student-course-portal
+Participant: Lucky Sharma | Superset ID: 8009333
+================================================================================
+
+
+################################################################################
+HANDS-ON 1 - Environment Setup, Project Structure & First Component
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1 - Step 2: Project File Structure Notes
+--------------------------------------------------------------------------
+
+1. angular.json
+
+Defines the Angular workspace configuration.
+It contains project settings for building, serving, testing, asset management,
+file replacements, environment configurations, and build budgets used by the
+Angular CLI.
+
+2. tsconfig.json
+
+The root TypeScript configuration file shared across the entire workspace.
+It defines global compiler options such as the ECMAScript target version,
+module resolution, strict type-checking rules, and other TypeScript settings.
+
+3. tsconfig.app.json
+
+The application-specific TypeScript configuration file.
+It extends the base tsconfig.json and specifies the files included in the
+application build while excluding test/spec files.
+
+4. package.json
+
+Stores project metadata, npm dependencies, development dependencies, and
+npm scripts such as start, build, test, and lint.
+It is used by npm to install, update, and manage project packages.
+
+5. src/main.ts
+
+The entry point of the Angular application.
+It bootstraps the root component (AppComponent) using
+bootstrapApplication() and loads the application configuration from
+app.config.ts, thereby starting the Angular application.
+
+6. src/app/app.config.ts
+
+The configuration file for the standalone Angular application.
+It registers global providers such as the Router, HttpClient,
+animations, and other application-wide services required by the application.
+
+7. src/app/app.ts
+
+The root component of the Angular application.
+It serves as the top-level container (application shell) that hosts
+the router outlet and other top-level UI components.
+
+8. src/index.html
+
+The main HTML page loaded by the browser.
+It contains the <app-root> element where Angular dynamically renders
+the entire application during runtime.
+
+Angular Application Flow
+-------------------------
+Browser
+   |
+   v
+index.html
+   |
+   v
+main.ts
+   |
+   v
+app.config.ts
+   |
+   v
+AppComponent (app.ts)
+   |
+   v
+Application UI
+
+Summary:
+angular.json      -> Angular CLI workspace configuration
+tsconfig.json     -> Global TypeScript configuration
+tsconfig.app.json -> Application-specific TypeScript configuration
+package.json      -> Dependencies, scripts, and project metadata
+main.ts           -> Application entry point
+app.config.ts     -> Global application configuration
+app.ts            -> Root component (Application Shell)
+index.html        -> Main HTML page
+
+--------------------------------------------------------------------------
+Task 1 - Step 3: ng serve
+--------------------------------------------------------------------------
+Running "ng serve" starts the Angular development server on
+http://localhost:4200. The default Angular welcome page loaded without
+errors, confirming the workspace was scaffolded correctly.
+
+--------------------------------------------------------------------------
+Task 1 - Step 4: ng build Output
+--------------------------------------------------------------------------
+Running "ng build" generates a dist/ folder containing the production-ready
+compiled application. The compiled application code is bundled into
+main-[hash].js (e.g., main-NLVHSGWP.js), which contains all the TypeScript/
+Angular code compiled down to JavaScript. Styles are similarly bundled into
+styles-[hash].css.
+
+--------------------------------------------------------------------------
+Task 1 - Step 5: Build Budgets (angular.json)
+--------------------------------------------------------------------------
+Located under: architect > build > configurations > production > budgets
+
+Budget 1 - type: "initial"
+  maximumWarning: 500kB
+  maximumError: 1MB
+
+Budget 2 - type: "anyComponentStyle"
+  maximumWarning: 4kB
+  maximumError: 8kB
+
+Explanation:
+- maximumWarning: If the bundle size exceeds this value, the CLI shows a
+  warning during the build, but the build still succeeds.
+- maximumError: If the bundle size exceeds this value, the build FAILS
+  with an error, preventing an oversized bundle from being shipped.
+
+The "initial" budget applies to the app's main JS/CSS bundle loaded on
+first page load. The "anyComponentStyle" budget applies to each individual
+component's CSS file, keeping per-component styles lightweight.
+
+--------------------------------------------------------------------------
+Task 2: Create & Organise Components
+--------------------------------------------------------------------------
+Generated four components using the Angular CLI:
+  ng generate component components/header
+  ng generate component pages/home
+  ng generate component pages/course-list
+  ng generate component pages/student-profile
+
+Each generated component produced 4 files: .ts, .html, .css, .spec.ts.
+Angular 20 uses standalone components by default - no NgModule declarations
+required; each component is self-registering via its own "imports" array.
+
+HeaderComponent template: added a <nav> with the portal name "Student
+Course Portal" and placeholder links (Home, Courses, Profile).
+
+HomeComponent template: added a welcome heading (<h1>), a description
+paragraph, and a stats row (Courses Available, Enrolled, GPA).
+
+<app-header> and <router-outlet> were added to app.html, replacing the
+default CLI boilerplate.
+
+Result: ng serve compiled without errors; header nav and home page content
+rendered correctly in the browser.
+
+
+################################################################################
+HANDS-ON 2 - Data Binding, Lifecycle Hooks & Component Communication
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1: All Four Binding Types
+--------------------------------------------------------------------------
+- Interpolation: {{ portalName }} displays the portalName property in the
+  Home template.
+- Property binding: [disabled]="!isPortalActive" controls the Enroll Now
+  button's disabled state based on a boolean property.
+- Event binding: (click)="onEnrollClick()" sets a message property when
+  the button is clicked.
+- Two-way binding: [(ngModel)]="searchTerm" on a search input, requiring
+  FormsModule to be imported into the Home component's imports array.
+
+Comment explaining the difference:
+  [property] is one-way (component -> DOM only).
+  [(ngModel)] is two-way (DOM <-> component); it is shorthand for
+  [ngModel]="prop" (ngModelChange)="prop = $event".
+
+--------------------------------------------------------------------------
+Task 2: Lifecycle Hooks
+--------------------------------------------------------------------------
+- ngOnInit in HomeComponent: logs "HomeComponent initialised - courses
+  loaded" to the console when the component is first created.
+- ngOnDestroy in HomeComponent: logs "HomeComponent destroyed" when
+  navigating away from the Home page.
+- CourseCardComponent generated (components/course-card) with an
+  @Input() course: any property.
+- ngOnChanges(changes: SimpleChanges) implemented on CourseCardComponent:
+  logs the previous and current value of the course input whenever it
+  changes, using changes['course']?.previousValue / currentValue.
+
+Result: console showed the ngOnInit log on Home page load, the
+ngOnDestroy log on navigation away, and an ngOnChanges log per card on
+initial render.
+
+--------------------------------------------------------------------------
+Task 3: @Input and @Output - Parent-Child Communication
+--------------------------------------------------------------------------
+- CourseCardComponent: @Input() course renders name, code, credits, id
+  in its template.
+- CourseCardComponent: @Output() enrollRequested = new
+  EventEmitter<number>() emits the course id when the Enroll button is
+  clicked: (click)="enrollRequested.emit(course.id)".
+- CourseListComponent: defines a courses array of 5 course objects and
+  renders a CourseCardComponent per item using *ngFor, binding
+  [course]="c" and (enrollRequested)="onEnroll($event)".
+- onEnroll(courseId: number) in CourseListComponent logs "Enrolling in
+  course: " + courseId and sets selectedCourseId.
+- selectedCourseId displayed conditionally with
+  *ngIf="selectedCourseId".
+
+Result: clicking Enroll on any card logged the course id to the console
+and displayed the selected course id below the list. This confirmed the
+one-way @Input (data down) / @Output (events up) data flow pattern.
+
+
+################################################################################
+HANDS-ON 3 - Directives & Pipes - Built-in and Custom
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1: Structural Directives
+--------------------------------------------------------------------------
+- isLoading boolean added to CourseListComponent, initialised to true.
+  *ngIf="isLoading" shows "Loading courses..."; the course grid renders
+  when isLoading is false. A setTimeout in ngOnInit flips isLoading to
+  false after 1.5 seconds.
+- *ngFor renders CourseCardComponents with trackBy: trackByCourseId.
+  trackByCourseId(index, course) returns course.id.
+  Comment: trackBy improves performance because Angular reuses existing
+  DOM elements identified by id instead of destroying and recreating
+  every element on any array change; without it, every list item is
+  re-rendered on any change.
+- gradeStatus ('passed' | 'failed' | 'pending') added to each course
+  object. *ngSwitch on course.gradeStatus in CourseCardComponent renders
+  a colour-coded badge per status (green/red/grey) via *ngSwitchCase /
+  *ngSwitchDefault.
+- *ngIf/else with <ng-template #noCourses> shows "No courses available."
+  when the courses array is empty. Verified by temporarily setting
+  courses = [] and confirming the template swap.
+
+Result: loading message displayed for 1.5s then disappeared; trackBy
+confirmed via console logging inside trackByCourseId; badges rendered
+correctly per grade status; empty array showed the no-courses template.
+
+--------------------------------------------------------------------------
+Task 2: Attribute Directives - ngClass and ngStyle
+--------------------------------------------------------------------------
+- [ngClass] applies 'card--enrolled' when isEnrolled is true and
+  'card--full' when course.credits >= 4, with matching CSS classes
+  defined in course-card.css.
+- [ngStyle] sets the card's left border colour dynamically based on
+  gradeStatus (green/red/grey).
+- isExpanded property toggled via a "Show Details" button, adding an
+  'expanded' class that increases card height.
+- Refactored the inline ngClass object into a cardClasses getter:
+  get cardClasses() { return { 'card--enrolled': ..., 'card--full': ...,
+  'expanded': ... } }, bound as [ngClass]="cardClasses".
+  Comment: getters keep templates clean because complex conditional
+  logic lives in the component class rather than inline in the
+  template; the getter is reusable, unit-testable, and keeps multiple
+  bindings managed in one place.
+
+Result: enrolled cards showed the card--enrolled style; grade status
+reflected via border colour; Show Details toggled the expanded class.
+
+--------------------------------------------------------------------------
+Task 3: Custom Directive and Custom Pipe
+--------------------------------------------------------------------------
+- Generated: ng generate directive directives/highlight
+- HighlightDirective (selector [appHighlight]) uses @HostListener
+  ('mouseenter') and @HostListener('mouseleave') combined with
+  @HostBinding('style.backgroundColor') to apply/remove a background
+  colour on hover. @Input() appHighlight = 'yellow' makes the colour
+  configurable.
+- Directive applied on the actual visible .course-card element inside
+  CourseCardComponent's template (not on the host <app-course-card> tag
+  in CourseListComponent, since the outer tag has no visible background
+  of its own and would be visually covered by the inner card div).
+- Generated: ng generate pipe pipes/credit-label
+- CreditLabelPipe implements PipeTransform. transform(credits) returns:
+    null/0        -> 'No Credits'
+    1             -> '1 Credit'
+    2 or more     -> '<n> Credits'
+  Used in the template as {{ course.credits | creditLabel }}.
+
+Result: hovering over a course card showed a background colour change;
+{{ 4 | creditLabel }} displayed "4 Credits"; the @Input() appHighlight
+default confirms the directive is configurable per the exercise
+specification (caller can pass appHighlight="lightblue" etc.).
+
+
+################################################################################
+HANDS-ON 4 - Template-Driven Forms & Validation
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1: Build the Enrollment Request Form
+--------------------------------------------------------------------------
+- Generated: ng generate component pages/enrollment-form
+- Route added at path 'enroll' in app.routes.ts.
+- FormsModule imported into EnrollmentFormComponent's imports array to
+  enable ngModel and ngForm.
+- Form built with <form #enrollForm="ngForm" (ngSubmit)="onSubmit
+  (enrollForm)">. Fields: studentName (text), studentEmail (email),
+  courseId (number), preferredSemester (select: Odd/Even), agreeToTerms
+  (checkbox) - each bound with [(ngModel)] and a name attribute.
+- onSubmit(form: NgForm) logs form.value and form.valid to the console.
+- Submit button disabled via [disabled]="enrollForm.invalid".
+
+Result: submitting with all fields filled logged the form value object
+(keyed by each control's name attribute) and form.valid = true; the
+Submit button was disabled while the form was invalid.
+
+--------------------------------------------------------------------------
+Task 2: Validation and Error Messages
+--------------------------------------------------------------------------
+- Validators added: required + minlength="3" on studentName; required +
+  email on studentEmail; required on courseId; required on
+  agreeToTerms.
+- Template reference variables (#nameCtrl="ngModel" etc.) added per
+  field to access control state.
+- Error messages shown conditionally using the pattern:
+  *ngIf="nameCtrl.touched && nameCtrl.errors?.['required']"
+  touched (not dirty) was used deliberately so errors appear only after
+  the user leaves a field, not while actively typing.
+- CSS form-state classes applied: .ng-invalid.ng-touched { border-color:
+  red } and .ng-valid.ng-touched { border-color: green }, using
+  Angular's automatically-applied ng-valid/ng-invalid and
+  ng-touched/ng-untouched classes.
+- A submitted boolean toggled in onSubmit() controls a success message
+  div shown via *ngIf="submitted": "Enrollment request submitted
+  successfully!".
+- A Reset button calls enrollForm.resetForm() to clear all fields and
+  validation state.
+
+Result: invalid, touched fields showed red borders with specific error
+text; valid touched fields showed green borders; successful submission
+displayed the success message; Reset cleared the form completely.
+
+
+################################################################################
+HANDS-ON 5 - Reactive Forms - FormBuilder, FormGroup, FormArray & Custom Validators
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1: Build a Reactive Form with FormBuilder
+--------------------------------------------------------------------------
+- Generated: ng generate component pages/reactive-enrollment-form
+- Route added at path 'enroll-reactive' (later moved under the
+  lazy-loaded /enroll feature as 'enroll/reactive' - see Hands-On 7).
+- ReactiveFormsModule imported into the component's imports array.
+- FormBuilder injected via the constructor. In ngOnInit, enrollForm was
+  built with fb.group({...}), including studentName (required +
+  minLength(3)), studentEmail (required + email), courseId (required),
+  preferredSemester (default 'Odd', required), agreeToTerms (default
+  false, requiredTrue), and an empty additionalCourses FormArray.
+- Template bound with [formGroup]="enrollForm" and formControlName on
+  each input - no ngModel needed in reactive forms since the form model
+  lives entirely in the TypeScript class.
+- Submit button disabled via [disabled]="enrollForm.invalid". On
+  submit, both enrollForm.value and enrollForm.getRawValue() are logged.
+  Comment: enrollForm.value excludes disabled controls; getRawValue()
+  includes every control regardless of its disabled state - useful when
+  a field is disabled for display purposes but its value is still
+  needed on submit.
+
+Result: the form rendered correctly bound to the reactive model; Submit
+logged the value; the Submit button only enabled once all validators
+passed.
+
+--------------------------------------------------------------------------
+Task 2: Custom Validators and FormArray for Dynamic Controls
+--------------------------------------------------------------------------
+- noCourseCode(control: AbstractControl): ValidationErrors | null -
+  a custom synchronous validator returning { noCourseCode: true } if the
+  control's value starts with 'XX'. Applied to courseId alongside
+  Validators.required.
+- Custom error displayed via
+  *ngIf="enrollForm.get('courseId')?.errors?.['noCourseCode']".
+- simulateEmailCheck(control): Promise<ValidationErrors | null> - a
+  custom async validator that resolves after 800ms; returns
+  { emailTaken: true } if the email contains 'test@', otherwise null.
+  Applied as the third argument of fb.control('', [sync validators],
+  [simulateEmailCheck]).
+- additionalCourses FormArray (fb.array([])) added to the form group.
+  An "Add Another Course" button pushes a new FormControl('',
+  Validators.required) into the array; each rendered row has a Remove
+  button calling removeCourse(i) -> additionalCourses.removeAt(i).
+- get additionalCourses() { return this.enrollForm.get
+  ('additionalCourses') as FormArray; } implemented as a typed getter.
+  Comment: the getter avoids repeated "as FormArray" casting directly in
+  the template, keeps template expressions clean, and gives compile-time
+  type safety when calling .controls / .push() / .removeAt() from the
+  component class.
+
+Result: entering 'XX101' in Course ID showed the custom "not allowed"
+error; entering an email containing 'test@' showed "Email taken" after
+the 800ms async check (with a "Checking email availability..." pending
+state shown via control.pending in between); Additional Course controls
+could be dynamically added and removed.
+
+
+################################################################################
+HANDS-ON 6 - Services & Dependency Injection
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1: Create and Use a Course Service
+--------------------------------------------------------------------------
+- Generated: ng generate service services/course
+- CourseService provided at root level via @Injectable({ providedIn:
+  'root' }), making it an application-wide singleton.
+- Course interface defined separately in models/course.model.ts: { id,
+  name, code, credits, gradeStatus: 'passed' | 'failed' | 'pending' }.
+- CourseService methods (initial in-memory version, later refactored to
+  HttpClient in Hands-On 8): getCourses(): Course[], getCourseById(id):
+  Course | undefined, addCourse(course): void.
+- CourseService injected into CourseListComponent's constructor;
+  ngOnInit replaced the hardcoded courses array with
+  this.courseService.getCourses().
+- CourseService also injected into HomeComponent, using
+  getCourses().length to display a live course count in the stats row.
+- A second component, CourseSummaryWidget, was generated and also
+  injects CourseService, calling getCourses().length independently.
+
+Result: both CourseListComponent and HomeComponent (and the widget)
+read from the same CourseService instance. Adding a course via the
+widget's "Add Test Course" button and then checking the /courses page
+confirmed the new course appeared there too - proving all consumers
+share a single singleton instance. (Home's own displayed count does not
+auto-refresh mid-session since ngOnInit runs only once; a full page
+reload re-reads the current, shared service state into every component -
+this is expected Angular lifecycle behaviour, not a bug.)
+
+--------------------------------------------------------------------------
+Task 2: Enrollment Service and Hierarchical DI
+--------------------------------------------------------------------------
+- Generated: ng generate service services/enrollment
+- EnrollmentService provided at root level. Holds private
+  enrolledCourseIds: number[] = [] with methods enroll(courseId),
+  unenroll(courseId), isEnrolled(courseId): boolean, and
+  getEnrolledCourseIds(): number[] (later used to resolve full Course
+  objects via CourseService for the Profile page).
+- CourseService injected into EnrollmentService's constructor,
+  demonstrating service-to-service injection.
+- EnrollmentService injected into CourseCardComponent. Clicking Enroll
+  calls enroll()/unenroll() and toggles the button label between
+  'Enroll' and 'Unenroll' based on isEnrolled(course.id).
+- StudentProfileComponent injects EnrollmentService (and CourseService)
+  and displays the list of enrolled courses.
+- Component-level provider demonstrated: NotificationService is
+  @Injectable() WITHOUT providedIn: 'root', and is instead listed in
+  NotificationComponent's own providers: [NotificationService] array.
+  Comment: this creates a new, separate NotificationService instance
+  scoped only to that component (and its children), rather than sharing
+  the application-wide singleton pattern used by CourseService and
+  EnrollmentService - useful whenever isolated per-component state is
+  required.
+
+Result: clicking Enroll toggled the button to "Unenroll" and vice
+versa; enrolled courses appeared correctly on the Profile page; the
+Notification component's "Add Notification" button appended timestamped
+messages to its own isolated list.
+
+
+################################################################################
+HANDS-ON 7 - Angular Routing - Guards, Lazy Loading & Route Data
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1: Route Configuration, Parameters and Nested Routes
+--------------------------------------------------------------------------
+- app.routes.ts defines: '' -> Home, 'courses' -> CoursesLayout (parent)
+  with nested children '' -> CourseList and ':id' -> CourseDetail,
+  'profile' -> StudentProfile, and a trailing '**' wildcard ->
+  NotFound. The wildcard route is always placed last since Angular
+  matches routes in declaration order.
+- CourseDetailComponent generated; injects ActivatedRoute and reads the
+  :id route param via this.route.snapshot.paramMap.get('id'), then uses
+  CourseService.getCourseById() to load and display the matching
+  course.
+- CourseListComponent's cards were made clickable, calling
+  router.navigate(['courses', course.id]) on click (with
+  event.stopPropagation() on the Enroll/Show Details buttons so they do
+  not also trigger navigation).
+- A search input updates the URL's query params via router.navigate
+  (['courses'], { queryParams: { search: this.searchTerm } }); the
+  value is read back on init via
+  route.snapshot.queryParamMap.get('search').
+- CoursesLayoutComponent added purely as a nested-route parent, hosting
+  a <router-outlet> for its 'courses' children.
+
+Result: navigating to /courses/2 showed the correct course detail page;
+typing in the search box updated the URL to /courses?search=...;
+visiting an undefined path rendered the 404 NotFound page.
+
+--------------------------------------------------------------------------
+Task 2: Lazy Loading and Route Guards
+--------------------------------------------------------------------------
+- Since this project uses standalone components (no NgModules), lazy
+  loading was implemented the modern Angular 20 way via a routes file
+  rather than an NgModule: src/app/features/enrollment/
+  enrollment.routes.ts exports an enrollmentRoutes: Routes array
+  ('' -> EnrollmentForm, 'reactive' -> ReactiveEnrollmentForm). The main
+  app.routes.ts references it with:
+    { path: 'enroll', loadChildren: () => import
+      ('./features/enrollment/enrollment.routes')
+      .then(m => m.enrollmentRoutes) }
+  This produces the same on-demand chunk-loading behaviour the exercise
+  specifies for loadChildren + an NgModule.
+- Verified in Chrome DevTools -> Network tab: no enrollment-related
+  script is present on the initial app load; navigating to /enroll for
+  the first time triggers a new chunk request (confirmed by name, e.g.
+  enrollment-form.ts and reactive-enrollment-form.ts entries appearing
+  only after navigating to /enroll).
+- Generated: ng generate service services/auth and
+  ng generate guard guards/auth (CanActivate type).
+  AuthService exposes a hardcoded isLoggedIn = true property.
+  authGuard (CanActivateFn) checks authService.isLoggedIn; if false, it
+  calls router.navigate(['/']) and returns false, otherwise returns
+  true.
+- The guard was applied to both the 'profile' route and the 'enroll'
+  (lazy-loaded) route via canActivate: [authGuard].
+- Generated: ng generate guard guards/unsaved-changes (CanDeactivate
+  type). A CanComponentDeactivate interface (hasUnsavedChanges(): 
+  boolean) was defined; unsavedChangesGuard checks the component's
+  hasUnsavedChanges() and, if true, shows window.confirm('You have
+  unsaved changes. Leave?') - returning true/false accordingly.
+- ReactiveEnrollmentFormComponent implements CanComponentDeactivate,
+  returning this.enrollForm.dirty && !this.submitted. The guard is
+  applied to the 'reactive' child route inside enrollment.routes.ts via
+  canDeactivate: [unsavedChangesGuard].
+
+Result: Network tab confirmed a separate JS chunk loaded only on first
+/enroll visit; setting isLoggedIn = false and navigating to /profile
+redirected to Home; making the reactive form dirty and then navigating
+away triggered the "unsaved changes" confirm dialog.
+
+
+################################################################################
+HANDS-ON 8 - HTTP Client - API Integration, Observables & Interceptors
+################################################################################
+
+--------------------------------------------------------------------------
+Setup
+--------------------------------------------------------------------------
+- Installed JSON Server globally: npm install -g json-server
+- db.json created at the project root with courses, students, and
+  enrollments arrays (seeded with the same 5 courses used throughout the
+  earlier hands-ons, plus sample student/enrollment records).
+- Run alongside ng serve in a separate terminal:
+    json-server --watch db.json --port 3000
+  This exposes REST endpoints at http://localhost:3000/courses,
+  /students, /enrollments.
+
+--------------------------------------------------------------------------
+Task 1: Replace Service Data with HttpClient Calls
+--------------------------------------------------------------------------
+- provideHttpClient(withInterceptors([...])) added to app.config.ts's
+  providers array (standalone equivalent of importing HttpClientModule).
+- CourseService refactored to inject HttpClient and return Observables:
+    getCourses(): Observable<Course[]> -> http.get<Course[]>
+      ('http://localhost:3000/courses')
+    getCourseById(id): Observable<Course> -> http.get<Course>
+      ('.../courses/' + id)
+    createCourse(course): Observable<Course> -> http.post<Course>(...)
+    updateCourse(id, course): Observable<Course> -> http.put<Course>(...)
+    deleteCourse(id): Observable<void> -> http.delete<void>(...)
+  All downstream consumers (CourseList, Home, CourseSummaryWidget,
+  CourseDetail) were updated to .subscribe() to these Observables
+  instead of reading a synchronous array/value.
+- CourseListComponent's ngOnInit subscribes with next/error/complete
+  handlers: courses assigned on next, errorMessage set + isLoading
+  cleared on error, isLoading cleared on complete.
+- EnrollmentForm's onSubmit() now calls courseService.createCourse(...)
+  and only sets submitted = true inside the subscribe's next callback,
+  demonstrating a real POST request.
+- PUT and DELETE methods exist on CourseService (updateCourse,
+  deleteCourse) and were exercised via Postman against
+  http://localhost:3000/courses/:id.
+
+Result: /courses loads live data from JSON Server; submitting the
+enrollment form issues a POST to http://localhost:3000/courses (status
+201) and the new record persists in db.json (confirmed by inspecting
+the file and by re-fetching the list); PUT and DELETE were verified via
+Postman, returning 200 and updating/removing the corresponding db.json
+entry.
+
+--------------------------------------------------------------------------
+Task 2: RxJS Operators and Error Handling
+--------------------------------------------------------------------------
+CourseService.getCourses() composes a single RxJS pipe:
+    .pipe(
+      map(courses => courses.filter(c => c.credits > 0)),
+      tap(courses => console.log('Courses loaded:', courses.length)),
+      retry(2),
+      catchError(err => {
+        console.error(err);
+        return throwError(() => new Error(
+          'Failed to load courses. Please try again.'));
+      })
+    )
+- map: transforms the raw API response before it reaches the component
+  (filters out any zero/negative-credit entries).
+- tap: used purely for the side-effect console log. Comment: tap must
+  never modify the stream's data - using map for logging would blur the
+  distinction between "transforming data" and "reacting to data".
+- retry(2): retries the failed HTTP request up to 2 additional times
+  (3 attempts total) before the error is allowed to propagate to
+  catchError.
+- catchError: logs the raw error and rethrows a clean, user-facing
+  Error with a friendly message, which CourseListComponent then displays
+  in the template.
+- switchMap demonstrated in CourseDetailComponent: getCourseById(id)
+  .pipe(switchMap(course => { this.course = course; return
+  enrollmentService.getStudentsByCourse(course.id); })) chains a
+  dependent HTTP call (loading enrolled students for the selected
+  course). Comment: switchMap cancels the previous inner Observable
+  (the prior course's student-list request) the instant a new courseId
+  arrives, preventing stale/out-of-order responses if the route
+  parameter changes quickly.
+
+Result: stopping JSON Server and reloading /courses showed the Network
+tab firing 3 attempts (1 original + 2 retries via net::ERR_CONNECTION_
+REFUSED) before the red "Failed to load courses. Please try again."
+message rendered - confirming both retry(2) and catchError. Restarting
+JSON Server restored normal loading. /courses/:id correctly showed the
+selected course's enrolled students via the switchMap chain.
+
+--------------------------------------------------------------------------
+Task 3: HTTP Interceptors
+--------------------------------------------------------------------------
+- Generated: ng generate interceptor interceptors/auth
+  authInterceptor (HttpInterceptorFn) clones every outgoing request and
+  adds an Authorization: Bearer mock-token-12345 header before calling
+  next(clonedReq).
+- Generated: ng generate interceptor interceptors/error-handler
+  errorHandlerInterceptor wraps next(req) in catchError: a 401 response
+  triggers router.navigate(['/']); a 500 response logs a global server
+  error message; the original error is rethrown via throwError so
+  downstream catchError/subscribe handlers still run.
+- Generated: ng generate interceptor interceptors/loading and
+  ng generate service services/loading
+  LoadingService exposes an isLoading$ BehaviorSubject-backed
+  Observable. loadingInterceptor sets loading true before next.handle
+  (req) and false inside a finalize() operator (which runs whether the
+  request completes or errors - equivalent to a try/catch/finally).
+  A global loading indicator in app.html is bound to
+  loadingService.isLoading$ via the async pipe.
+- All three interceptors registered in app.config.ts:
+    provideHttpClient(withInterceptors([authInterceptor,
+      errorHandlerInterceptor, loadingInterceptor]))
+  Interceptors run in registration order on the way out and in reverse
+  order on the way back.
+
+Result: DevTools -> Network -> any API request -> Headers tab confirmed
+Authorization: Bearer mock-token-12345 present on every call; a
+temporary global "Loading..." indicator appeared during HTTP calls and
+disappeared on completion, confirming the loading interceptor.
+
+
+################################################################################
+HANDS-ON 9 - State Management - NgRx Store, Actions, Reducers, Effects & Selectors
+################################################################################
+
+--------------------------------------------------------------------------
+Task 1: Set Up NgRx Store and Define Course State
+--------------------------------------------------------------------------
+- Installed: npm install @ngrx/store @ngrx/effects @ngrx/entity
+  @ngrx/store-devtools, plus the Redux DevTools Chrome extension.
+- store/course/course.actions.ts defines loadCourses ('[Course] Load
+  Courses'), loadCoursesSuccess ('[Course] Load Courses Success', props
+  <{ courses: Course[] }>()), loadCoursesFailure ('[Course] Load Courses
+  Failure', props<{ error: string }>()).
+  Comment: the '[Course]' prefix groups actions by feature, making the
+  Redux DevTools action log filterable and readable.
+- store/course/course.reducer.ts defines CourseState { courses,
+  loading, error } and a courseReducer built with createReducer/on()
+  handling all three actions (set loading true on load, populate
+  courses + clear loading on success, set error + clear loading on
+  failure).
+- store/course/course.selectors.ts defines selectCourseState
+  (createFeatureSelector<CourseState>('course')), and derived selectors
+  selectAllCourses, selectCoursesLoading, selectCoursesError via
+  createSelector. Selectors are memoised - they only recompute when
+  their input selectors' values actually change.
+- app.config.ts registers provideStore({ course: courseReducer,
+  enrollment: enrollmentReducer }) and provideStoreDevtools({ maxAge:
+  25 }) for the Redux DevTools integration.
+- CourseListComponent refactored to inject Store, select courses$ =
+  store.select(selectAllCourses) (similarly isLoading$, errorMessage$),
+  dispatch loadCourses() in ngOnInit, and render via the async pipe in
+  the template ({{ courses$ | async }}) instead of a plain array/
+  subscribe.
+
+Result: Redux DevTools' Actions panel showed [Course] Load Courses
+dispatched on page load, followed by [Course] Load Courses Success once
+the HTTP effect resolved; the State panel showed the course slice with
+populated courses, loading: false, error: null; the course grid
+rendered correctly via the async pipe.
+
+--------------------------------------------------------------------------
+Task 2: NgRx Effects for HTTP and Enrollment State
+--------------------------------------------------------------------------
+- store/course/course.effects.ts: CourseEffects.loadCourses$ =
+  createEffect(() => actions$.pipe(ofType(loadCourses), switchMap(() =>
+  courseService.getCourses().pipe(map(courses => loadCoursesSuccess
+  ({ courses })), catchError(error => of(loadCoursesFailure
+  ({ error: error.message })))))));
+  Registered via provideEffects([CourseEffects]) in app.config.ts.
+  Comment: effects are the only place side effects (HTTP, navigation)
+  should occur in NgRx - reducers remain pure functions.
+- Full traced flow: dispatch(loadCourses()) -> effect intercepts via
+  ofType -> calls courseService.getCourses() -> maps the HTTP response
+  to loadCoursesSuccess -> reducer updates state.courses -> selector
+  emits the new array -> component re-renders via async pipe. Each step
+  is independently visible in Redux DevTools.
+- store/enrollment/enrollment.actions.ts, .reducer.ts, .selectors.ts
+  added: enrollInCourse/unenrollFromCourse/setEnrolledCourses actions;
+  a reducer tracking enrolledCourseIds: number[]; selectEnrolledIds; and
+  a cross-slice selector selectEnrolledCourses built with createSelector
+  (selectAllCourses, selectEnrolledIds, (courses, ids) => courses.filter
+  (c => ids.includes(c.id))) - combining the course and enrollment
+  slices without duplicating course data inside enrollment state.
+- CourseCardComponent dispatches enrollInCourse({ courseId }) /
+  unenrollFromCourse({ courseId }) on the Enroll/Unenroll button click,
+  and derives isEnrolled$ from store.select(selectEnrolledIds).pipe(map
+  (ids => ids.includes(course.id))), rendered via the async pipe to
+  toggle the button label and card styling.
+
+Result: Redux DevTools showed the complete
+loadCourses -> effect -> loadCoursesSuccess chain on every page load,
+and [Enrollment] Enroll In Course / Unenroll From Course actions firing
+on button clicks with the enrollment slice's enrolledCourseIds updating
+accordingly; the Enroll/Unenroll button label updated reactively via
+the async pipe.
+
+
+################################################################################
+HANDS-ON 10 - Unit Testing Angular Applications - Jasmine, Karma & TestBed
+################################################################################
+
+Note: this Angular 20 workspace was scaffolded with Vitest (Angular's
+current CLI default test runner) rather than Karma. The describe/it/
+expect syntax and TestBed APIs used below are identical to Jasmine's,
+per the exercise book's specification; only the underlying test runner
+differs.
+
+--------------------------------------------------------------------------
+Task 1: Testing a Component - CourseCardComponent
+--------------------------------------------------------------------------
+course-card.spec.ts configures TestBed with the standalone CourseCard
+component and provideMockStore({ initialState: { enrollment:
+{ enrolledCourseIds: [] } } }) (since CourseCard now reads enrollment
+state from the NgRx store). Five tests implemented:
+  1. 'should create' - expect(component).toBeTruthy()
+  2. '@Input rendering' - sets component.course, calls
+     fixture.detectChanges(), and asserts the rendered <h3> textContent
+     contains the course name via fixture.debugElement.query(By.css
+     ('h3')).
+  3. '@Output emission' - spies on component.enrollRequested.emit,
+     simulates a button click via debugElement.query(By.css('button'))
+     .nativeElement.click(), and asserts emit was called with the
+     correct course id.
+  4. 'ngOnChanges logging' - spies on console.log, manually invokes
+     component.ngOnChanges() with a SimpleChanges object, and asserts
+     console.log was called.
+  5. 'NgRx dispatch on Enroll click' - spies on store.dispatch, clicks
+     the Enroll button, and asserts dispatch was called (covering the
+     enrollInCourse/unenrollFromCourse action dispatch added in
+     Hands-On 9).
+
+Result: ng test showed all 5 CourseCardComponent tests passing.
+
+--------------------------------------------------------------------------
+Task 2: Testing a Service and an NgRx-Connected Component
+--------------------------------------------------------------------------
+course.spec.ts (CourseService):
+- TestBed configured with HttpClientTestingModule and CourseService as
+  a provider; both CourseService and HttpTestingController injected.
+- 'should fetch courses via GET': subscribes to getCourses(), expects
+  the emitted array length to be 2, then uses httpMock.expectOne
+  ('http://localhost:3000/courses') and req.flush(mockCourses) to
+  supply the mocked response.
+- 'should handle a 500 error after retries': subscribes and asserts the
+  error message contains 'Failed to load courses'; because the service
+  uses retry(2), the test flushes THREE separate 500 responses (one per
+  attempt: 1 original + 2 retries) before catchError's rethrown error is
+  observed.
+- afterEach calls httpMock.verify() to assert no unexpected/outstanding
+  HTTP requests were made in either test.
+
+course-list.spec.ts (NgRx-connected CourseList):
+- TestBed configured with provideMockStore({ initialState: { course:
+  { courses: mockCourses, loading: false, error: null } } }), plus
+  stubbed EnrollmentService, Router, and ActivatedRoute providers (since
+  CourseList also injects these for navigation/query-params/dependent
+  HTTP calls).
+- 'should render course cards matching the initial state': calls
+  fixture.detectChanges() and asserts the number of rendered
+  <app-course-card> elements matches mockCourses.length.
+- 'should show loading indicator when loading state is true': calls
+  store.setState({ course: { courses: [], loading: true, error: null
+  } }), re-runs detectChanges(), and asserts the loading <p> element's
+  textContent contains 'Loading'.
+
+Result: ng test / ng test --code-coverage showed all CourseService and
+CourseList tests passing alongside the CourseCardComponent suite - 
+33 tests passing in total across the project's spec files. The
+coverage/ folder (coverage/index.html) confirmed TypeScript logic
+coverage for the tested components and service.
+
+ 
